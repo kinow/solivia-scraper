@@ -3,12 +3,15 @@
 
 import os, sys
 import requests
-from pprint import pprint
 from datetime import datetime
 import urllib
 import re
 import html
-
+# loggin imports
+import logging
+from pprint import pprint
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+# dotEnv imports
 from os.path import join, dirname
 from dotenv import load_dotenv
 
@@ -38,7 +41,10 @@ def get_wresult_string(text_with_ws_result):
 def main():
     """Main method"""
 
+    logging.info("Starting Solivia scraper")
+
     # dotEnv
+    logging.debug("Loading dotEnv file .env")
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
 
@@ -47,6 +53,8 @@ def main():
     SOLIVIA_PASS        = os.environ.get('SOLIVIA_PASS')
     SOLIVIA_INVERTERS   = os.environ.get('SOLIVIA_INVERTERS').split(',')
     SOLIVIA_PLANTGUID   = os.environ.get('SOLIVIA_PLANTGUID')
+
+    logging.debug("Inverters: %s" % ','.join(SOLIVIA_INVERTERS))
 
     # date time parameters for auth. The now_ts_enc variable is used on the login post
     # and in the redirect post

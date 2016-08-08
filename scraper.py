@@ -30,6 +30,11 @@ def get_inverters_string(inverters_array):
     inverters = '%3B'.join(inverters_array)
     return inverters
 
+def get_wresult_string(text_with_ws_result):
+    token = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result).group(1)
+    wresult = html.unescape(token)
+    return wresult
+
 def main():
     """Main method"""
 
@@ -43,15 +48,11 @@ def main():
     SOLIVIA_INVERTERS   = os.environ.get('SOLIVIA_INVERTERS').split(',')
     SOLIVIA_PLANTGUID   = os.environ.get('SOLIVIA_PLANTGUID')
 
-    # date time parameters for auth
+    # date time parameters for auth. The now_ts_enc variable is used on the login post
+    # and in the redirect post
     now         = datetime.now()
     now_ts      = now.strftime('%Y-%m-%dT%H:%M:%SZ') #2016-08-08T03:38:25Z
-    now_ts2     = now.strftime('%Y-%m-%dT%H:%M:%S.000Z') #2016-08-08T03:38:25Z
     now_ts_enc  = urllib.parse.quote_plus(urllib.parse.quote_plus(urllib.parse.quote_plus(now_ts)))
-    now_ts_enc2 = urllib.parse.quote_plus(urllib.parse.quote_plus(urllib.parse.quote_plus(now_ts2)))
-
-    inverter1 = ''
-    inverter2 = ''
 
     # Start a requests session. The session takes care of passing the cookies
     # to the next requests.
@@ -67,8 +68,7 @@ def main():
         text_with_ws_result = r.text
 
         # Azure AD auth
-        wresult = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result).group(1)
-        wresult = html.unescape(wresult)
+        wresult = get_wresult_string(text_with_ws_result)
         data = {'wa': 'wsignin1.0', 'wresult': wresult, 'wctx': 'rm=0&id=passive&ru=%2f'}
         r = post(s, 'https://monitoring.solar-inverter.com/', data)
 

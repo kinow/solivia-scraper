@@ -26,6 +26,10 @@ def post(session, url, data):
         response.raise_for_status()
     return response
 
+def get_inverters_string(inverters_array):
+    inverters = '%3B'.join(inverters_array)
+    return inverters
+
 def main():
     """Main method"""
 
@@ -77,12 +81,13 @@ def main():
         data = {'sort': '', 'group': '', 'filter': '', 'duration': 'Daily'}
         r = post(s, fetch_inverter_data_url, data)
 
-        # Set other parameters
-        set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverter1 + '%3B' + inverter2 + '%3B&dataType=Power&yMult=1'
+        # Set other parameters, including inverters
+        inverters = get_inverters_string(SOLIVIA_INVERTERS)
+        set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=Power&yMult=1'
         r = get(s, set_parameters_url)
 
         # Get data URL + the Solivia plant GUID
-        get_data_url = 'https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=Power&plantGuid=' + SOLIVIA_PLANTGUID
+        get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=Power&plantGuid=%s" % SOLIVIA_PLANTGUID
         r = get(s, get_data_url)
 
         print(r.text)

@@ -12,6 +12,20 @@ import html
 from os.path import join, dirname
 from dotenv import load_dotenv
 
+def get(session, url):
+    """Utility method to HTTP GET a URL"""
+    response = s.get(url)
+    if response.status_code != requests.codes.ok:
+        response.raise_for_status()
+    return 
+
+def post(session, url, data):
+    """Utility method to HTTP POST a URL with data parameters"""
+    response = s.post(url, data=data)
+    if response.status_code != requests.codes.ok:
+        response.raise_for_status()
+    return response
+
 def main():
     # dotEnv
     dotenv_path = join(dirname(__file__), '.env')

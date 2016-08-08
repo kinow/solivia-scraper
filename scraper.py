@@ -46,10 +46,11 @@ def get_wresult_string(text_with_ws_result):
 def main():
     """Main method"""
 
-    args       = parser.parse_args()
-    date       = args.date.strftime('%d/%m/%Y')
-    logging.info("Starting Solivia scraper, for date %s" % date)
-    date       = urllib.parse.quote_plus(date)
+    args            = parser.parse_args()
+    date            = args.date
+    date_formatted  = date.strftime('%d/%m/%Y')
+    logging.info("Starting Solivia scraper, for date %s" % date_formatted)
+    date_encoded    = urllib.parse.quote_plus(date_formatted)
 
     # dotEnv
     logging.debug("Loading dotEnv file .env")
@@ -93,7 +94,7 @@ def main():
         r = post(s, 'https://monitoring.solar-inverter.com/', data)
 
         # Set the context date
-        set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date
+        set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
         logging.debug("Setting the context date...")
         r = get(s, set_date_url)
 
@@ -114,8 +115,15 @@ def main():
         logging.debug("Retrieving the Solar Inveters data...")
         r = get(s, get_data_url)
 
+        # Will fail if invalid JSON
         data = json.loads(r.text)
-        logging.info(data)
+        logging.debug(data)
+
+        destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S') + '.json')
+        with open(destination_file, 'w') as out_file:
+            out_file.write(r.text)
+
+        logging.info("All done! Bye!")
 
 if __name__ == '__main__':
     """App entry point"""

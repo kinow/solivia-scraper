@@ -11,7 +11,7 @@ import json
 # parameters
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper')
-parser.add_argument('--date', help='Date ', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
+parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
 # loggin imports
 import logging
 from pprint import pprint

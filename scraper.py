@@ -71,11 +71,13 @@ def main():
     now_ts      = now.strftime('%Y-%m-%dT%H:%M:%SZ') #2016-08-08T03:38:25Z
     now_ts_enc  = urllib.parse.quote_plus(urllib.parse.quote_plus(urllib.parse.quote_plus(now_ts)))
 
+    inverters = get_inverters_string(SOLIVIA_INVERTERS)
+
     # Start a requests session. The session takes care of passing the cookies
     # to the next requests.
     logging.debug("Starting requests session")
     with requests.Session() as s:
-        # Log in
+        # Sign in
         login_url = 'https://login.solar-inverter.com/en-US/Account/SignIn?returnUrl=%252fissue%252fwsfed%253fwa%253dwsignin1.0%2526wtrealm%253dhttp%25253a%25252f%25252fsoliviamonitoring.com%25252f%2526wctx%253drm%25253d0%252526id%25253dpassive%252526ru%25253d%2525252f%2526wct%253d' + now_ts_enc
         data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
         logging.debug("Logging in...")
@@ -93,35 +95,48 @@ def main():
         logging.debug("Azure AD authentication...")
         r = post(s, 'https://monitoring.solar-inverter.com/', data)
 
-        # Set the context date
-        set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
-        logging.debug("Setting the context date...")
-        r = get(s, set_date_url)
-
         # Fetch inverter data
         fetch_inverter_data_url = 'https://monitoring.solar-inverter.com/Chart/FetchInverterData?duration=Daily'
         data = {'sort': '', 'group': '', 'filter': '', 'duration': 'Daily'}
         logging.debug("Fetching the data...")
         r = post(s, fetch_inverter_data_url, data)
 
-        # Set other parameters, including inverters
-        inverters = get_inverters_string(SOLIVIA_INVERTERS)
+        # Set X config
+        set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
+        logging.debug("Setting the context date...")
+        r = get(s, set_date_url)
+
+        # Set Y config
         set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=Power&yMult=1'
         logging.debug("Setting other parameters, including inverters...")
         r = get(s, set_parameters_url)
 
+        get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
+
         # Get data URL + the Solivia plant GUID
         get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=Power&plantGuid=%s" % SOLIVIA_PLANTGUID
-        logging.debug("Retrieving the Solar Inveters data...")
+        logging.debug("Retrieving the Solar Inverters data...")
         r = get(s, get_data_url)
 
         # Will fail if invalid JSON
         data = json.loads(r.text)
         logging.debug(data)
 
-        destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S') + '.json')
-        with open(destination_file, 'w') as out_file:
+        destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S'))
+
+        # Write JSON
+        with open(destination_file + '.json', 'w') as out_file:
             out_file.write(r.text)
+
+        # Get CSV data
+        get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=Power&plantGuid=%s" % SOLIVIA_PLANTGUID
+        r = get(s, get_csv_url)
+
+        # Write CSV
+        with open(destination_file + '.csv', 'w') as out_file:
+            out_file.write(r.text)
+
+        logging.info(r.text)
 
         logging.info("All done! Bye!")
 

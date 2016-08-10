@@ -12,6 +12,7 @@ import json
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper')
 parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
+parser.add_argument('--types', help='Comma separated types e.g. Power,Energy,AcParam,DcParam', type=lambda s: s.lower().replace(' ', '').split(','), required=True)
 # loggin imports
 import logging
 from pprint import pprint
@@ -48,8 +49,10 @@ def main():
 
     args            = parser.parse_args()
     date            = args.date
+    types           = args.types
     date_formatted  = date.strftime('%d/%m/%Y')
     logging.info("Starting Solivia scraper, for date %s" % date_formatted)
+    logging.info("Types selected: %s" % (', '.join(types)))
     date_encoded    = urllib.parse.quote_plus(date_formatted)
 
     # dotEnv
@@ -76,6 +79,7 @@ def main():
     # Start a requests session. The session takes care of passing the cookies
     # to the next requests.
     logging.debug("Starting requests session")
+
     with requests.Session() as s:
         # Sign in
         login_url = 'https://login.solar-inverter.com/en-US/Account/SignIn?returnUrl=%252fissue%252fwsfed%253fwa%253dwsignin1.0%2526wtrealm%253dhttp%25253a%25252f%25252fsoliviamonitoring.com%25252f%2526wctx%253drm%25253d0%252526id%25253dpassive%252526ru%25253d%2525252f%2526wct%253d' + now_ts_enc
@@ -106,37 +110,39 @@ def main():
         logging.debug("Setting the context date...")
         r = get(s, set_date_url)
 
-        # Set Y config
-        set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=Power&yMult=1'
-        logging.debug("Setting other parameters, including inverters...")
-        r = get(s, set_parameters_url)
+        for t in types:
+            title_type = t.title()
+            # Set Y config
+            set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
+            logging.debug("Setting other parameters, including inverters...")
+            r = get(s, set_parameters_url)
 
-        get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
+            get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
 
-        # Get data URL + the Solivia plant GUID
-        get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=Power&plantGuid=%s" % SOLIVIA_PLANTGUID
-        logging.debug("Retrieving the Solar Inverters data...")
-        r = get(s, get_data_url)
+            # Get data URL + the Solivia plant GUID
+            get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
+            logging.debug("Retrieving the Solar Inverters data...")
+            r = get(s, get_data_url)
 
-        # Will fail if invalid JSON
-        data = json.loads(r.text)
-        logging.debug(data)
+            # Will fail if invalid JSON
+            data = json.loads(r.text)
+            logging.debug(data)
 
-        destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S'))
+            destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S'))
 
-        # Write JSON
-        with open(destination_file + '.json', 'w') as out_file:
-            out_file.write(r.text)
+            # Write JSON
+            with open(destination_file + '-' + t + '.json', 'w') as out_file:
+                out_file.write(r.text)
 
-        # Get CSV data
-        get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=Power&plantGuid=%s" % SOLIVIA_PLANTGUID
-        r = get(s, get_csv_url)
+            # Get CSV data
+            get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
+            r = get(s, get_csv_url)
 
-        # Write CSV
-        with open(destination_file + '.csv', 'w') as out_file:
-            out_file.write(r.text)
+            # Write CSV
+            with open(destination_file + '-' + t + '.csv', 'w') as out_file:
+                out_file.write(r.text)
 
-        logging.info(r.text)
+            logging.info(r.text)
 
         logging.info("All done! Bye!")
 

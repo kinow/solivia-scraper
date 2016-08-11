@@ -52,16 +52,12 @@ def main():
     """Main method"""
 
     args            = parser.parse_args()
-    date            = args.date
-    from_date       = args.from_
-    to_date         = args.to
+    date            = args.date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
+    to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
     types           = args.types
     interval        = args.interval
-
-    # By default, we look at the today's data, unless from and to have been specified
-    if from_date == None or to_date == None:
-        from_date   = date
-        to_date     = date
 
     logging.info("Starting Solivia scraper")
     logging.info("Types selected: %s" % (', '.join(types)))

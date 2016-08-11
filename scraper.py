@@ -8,6 +8,7 @@ import urllib
 import re
 import html
 import json
+import time
 # parameters
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper', epilog='the --date parameter is exclusive to --to and --from. If --date is used, then the others will be ignored')
@@ -15,10 +16,11 @@ parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.
 parser.add_argument('--from', dest="from_", help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
 parser.add_argument('--to', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
 parser.add_argument('--types', help='Comma separated types e.g. Power,Energy,AcParam,DcParam', type=lambda s: s.lower().replace(' ', '').split(','), required=True)
+parser.add_argument('--interval', help='Being nice to servers, and waiting for an interval in milliseconds before firing more requests (defaults to 300)', type=int, default=300)
 # loggin imports
 import logging
 from pprint import pprint
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
 # dotEnv imports
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -54,6 +56,7 @@ def main():
     from_date       = args.from_
     to_date         = args.to
     types           = args.types
+    interval        = args.interval
 
     # By default, we look at the today's data, unless from and to have been specified
     if from_date == None or to_date == None:
@@ -161,6 +164,12 @@ def main():
                     out_file.write(r.text)
 
                 logging.debug(r.text)
+
+                # sleep
+                if from_date != to_date:
+                    float_interval = (interval / 1000)
+                    logging.debug("Sleeping for %f milli seconds" % float_interval)
+                    time.sleep(float_interval)
 
             # Next day...
             from_date += step

@@ -60,6 +60,28 @@ you would like to download the data.
 Where the format is YYYY-MM-DD (i.e. year with four digits, month with two digits, and
 finally day with two digits too).
 
+The complete usage:
+
+```
+usage: scraper.py [-h] [--date DATE] [--from FROM_] [--to TO] --types TYPES
+                  [--interval INTERVAL]
+
+Solivia Monitoring scraper
+
+optional arguments:
+  -h, --help           show this help message and exit
+  --date DATE          Date (YYYY-mm-dd)
+  --from FROM_         Date (YYYY-mm-dd)
+  --to TO              Date (YYYY-mm-dd)
+  --types TYPES        Comma separated types e.g. Power,Energy,AcParam,DcParam
+  --interval INTERVAL  Being nice to servers, and waiting for an interval in
+                       milliseconds before firing more requests (defaults to
+                       300)
+
+the --date parameter is exclusive to --to and --from. If --date is used, then
+the others will be ignored
+```
+
 ## Output
 
 For every time you execute the script, you should see two files in your script directory.

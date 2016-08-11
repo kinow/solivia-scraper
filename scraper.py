@@ -3,7 +3,7 @@
 
 import os, sys
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import urllib
 import re
 import html
@@ -12,7 +12,7 @@ import json
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper', epilog='the --date parameter is exclusive to --to and --from. If --date is used, then the others will be ignored')
 parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
-parser.add_argument('--from', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
+parser.add_argument('--from', dest="from_", help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
 parser.add_argument('--to', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
 parser.add_argument('--types', help='Comma separated types e.g. Power,Energy,AcParam,DcParam', type=lambda s: s.lower().replace(' ', '').split(','), required=True)
 # loggin imports
@@ -51,11 +51,18 @@ def main():
 
     args            = parser.parse_args()
     date            = args.date
+    from_date       = args.from_
+    to_date         = args.to
     types           = args.types
-    date_formatted  = date.strftime('%d/%m/%Y')
-    logging.info("Starting Solivia scraper, for date %s" % date_formatted)
+
+    # By default, we look at the today's data, unless from and to have been specified
+    if from_date == None or to_date == None:
+        from_date   = date
+        to_date     = date
+
+    logging.info("Starting Solivia scraper")
     logging.info("Types selected: %s" % (', '.join(types)))
-    date_encoded    = urllib.parse.quote_plus(date_formatted)
+    logging.info("Date interval: %s to %s" % (from_date.strftime("%Y-%m-%d"), to_date.strftime("%Y-%m-%d")))
 
     # dotEnv
     logging.debug("Loading dotEnv file .env")
@@ -107,44 +114,56 @@ def main():
         logging.debug("Fetching the data...")
         r = post(s, fetch_inverter_data_url, data)
 
-        # Set X config
-        set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
-        logging.debug("Setting the context date...")
-        r = get(s, set_date_url)
+        # 1 day each time
+        step = timedelta(days=1)
 
-        for t in types:
-            title_type = t.title()
-            # Set Y config
-            set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
-            logging.debug("Setting other parameters, including inverters...")
-            r = get(s, set_parameters_url)
+        while from_date <= to_date:
+            date_formatted  = from_date.strftime('%d/%m/%Y')
+            logging.info("Download data for date %s..." % date_formatted)
+            date_encoded    = urllib.parse.quote_plus(date_formatted)
+        
+            # Set X config
+            set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
+            logging.debug("Setting the context date...")
+            r = get(s, set_date_url)
 
-            get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
+            for t in types:
+                logging.info("Downloading %s data..." % t)
+                title_type = t.title()
+                # Set Y config
+                set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
+                logging.debug("Setting other parameters, including inverters...")
+                r = get(s, set_parameters_url)
 
-            # Get data URL + the Solivia plant GUID
-            get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
-            logging.debug("Retrieving the Solar Inverters data...")
-            r = get(s, get_data_url)
+                get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
 
-            # Will fail if invalid JSON
-            data = json.loads(r.text)
-            logging.debug(data)
+                # Get data URL + the Solivia plant GUID
+                get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
+                logging.debug("Retrieving the Solar Inverters data...")
+                r = get(s, get_data_url)
 
-            destination_file = join(dirname(__file__), date.strftime('%Y%m%d%H%M%S'))
+                # Will fail if invalid JSON
+                data = json.loads(r.text)
+                logging.debug(data)
 
-            # Write JSON
-            with open(destination_file + '-' + t + '.json', 'w') as out_file:
-                out_file.write(r.text)
+                destination_file = join(dirname(__file__), from_date.strftime('%Y%m%d%H%M%S'))
 
-            # Get CSV data
-            get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
-            r = get(s, get_csv_url)
+                # Write JSON
+                with open(destination_file + '-' + t + '.json', 'w') as out_file:
+                    out_file.write(r.text)
 
-            # Write CSV
-            with open(destination_file + '-' + t + '.csv', 'w') as out_file:
-                out_file.write(r.text)
+                # Get CSV data
+                get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
+                r = get(s, get_csv_url)
 
-            logging.info(r.text)
+                # Write CSV
+                with open(destination_file + '-' + t + '.csv', 'w') as out_file:
+                    out_file.write(r.text)
+
+                logging.debug(r.text)
+
+            # Next day...
+            from_date += step
 
         logging.info("All done! Bye!")
 

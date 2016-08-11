@@ -70,6 +70,4 @@ Examples:
 * 20160809000000.csv
 * 20160809000000.json
 
-The names will match. But if you do not specify a time, it will use the system current
-time, and thus the hour part of the timestamp may contain some values different
-than zeroes.
+The names will match.

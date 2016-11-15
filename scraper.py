@@ -27,14 +27,14 @@ from dotenv import load_dotenv
 
 def get(session, url):
     """Utility method to HTTP GET a URL"""
-    response = session.get(url)
+    response = session.get(url, timeout=None)
     if response.status_code != requests.codes.ok:
         response.raise_for_status()
     return response
 
 def post(session, url, data):
     """Utility method to HTTP POST a URL with data parameters"""
-    response = session.post(url, data=data)
+    response = session.post(url, data=data, timeout=None)
     if response.status_code != requests.codes.ok:
         response.raise_for_status()
     return response
@@ -123,6 +123,13 @@ def main():
             for t in types:
                 logging.info("Downloading %s data..." % t)
                 title_type = t.title()
+
+                # Fetch inverter data
+                fetch_inverter_data_url = 'https://monitoring.solar-inverter.com/Chart/FetchInverterData?duration=Daily&type=' + title_type
+                data = {'sort': '', 'group': '', 'filter': '', 'duration': 'Daily'}
+                logging.debug("Fetching the data...")
+                r = post(s, fetch_inverter_data_url, data)
+
                 # Set Y config
                 set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
                 logging.debug("Setting other parameters, including inverters...")

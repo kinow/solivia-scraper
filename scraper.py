@@ -131,7 +131,7 @@ def main():
                 r = post(s, fetch_inverter_data_url, data)
 
                 # Set Y config
-                set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
+                set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + SOLIVIA_PLANTGUID + '%3B&dataType=' + title_type + '&yMult=1'
                 logging.debug("Setting other parameters, including inverters...")
                 r = get(s, set_parameters_url)
 

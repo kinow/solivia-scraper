@@ -107,12 +107,6 @@ def main():
         logging.debug("Azure AD authentication...")
         r = post(s, 'https://monitoring.solar-inverter.com/', data)
 
-        # Fetch inverter data
-        fetch_inverter_data_url = 'https://monitoring.solar-inverter.com/Chart/FetchInverterData?duration=Daily'
-        data = {'sort': '', 'group': '', 'filter': '', 'duration': 'Daily'}
-        logging.debug("Fetching the data...")
-        r = post(s, fetch_inverter_data_url, data)
-
         # 1 day each time
         step = timedelta(days=1)
 

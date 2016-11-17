@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-# TODO: docs
+
+"""
+A simple script, not distributed via pypi, that collects data from
+the Solivia Monitoring web sites. Other solutions include changing
+the way the device communicates to the servers, by intercepting
+calls via serial communication modifications. This approach is useful
+for those who cannot change the device. Licensed under the MIT
+License.
+"""
 
 import os, sys
 import requests

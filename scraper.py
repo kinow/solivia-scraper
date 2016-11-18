@@ -17,6 +17,7 @@ import re
 import html
 import json
 import time
+from html.parser import HTMLParser
 # parameters
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper', epilog='the --date parameter is exclusive to --to and --from. If --date is used, then the others will be ignored')
@@ -32,6 +33,27 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
 # dotEnv imports
 from os.path import join, dirname
 from dotenv import load_dotenv
+
+class MyHTMLParser(HTMLParser):
+
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.url = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'form':
+            for attr in attrs:
+                if attr[0] == 'action':
+                    self.url = attr[1]
+
+    def handle_endtag(self, tag):
+        pass
+
+    def handle_data(self, data):
+        pass
+
+    def get_url(self):
+        return self.url
 
 def get(session, url):
     """Utility method to HTTP GET a URL"""
@@ -56,6 +78,13 @@ def get_wresult_string(text_with_ws_result):
     token = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result).group(1)
     wresult = html.unescape(token)
     return wresult
+
+def get_form_action(response_txt):
+    logging.info("Searching for form action in ", response_txt)
+    parser = MyHTMLParser()
+    parser.feed(response_txt)
+    url = parser.get_url()
+    return "%s%s" % ('https://login.solar-inverter.com/', url)
 
 def main():
     """Main method"""
@@ -99,10 +128,13 @@ def main():
 
     with requests.Session() as s:
         # Sign in
-        login_url = 'https://monitoring.solar-inverter.com/'
+        sign_in_url = 'https://monitoring.solar-inverter.com/'
+        r = get(s, sign_in_url)
+        login_url = get_form_action(r.text)
+        logging.debug('Login URL ', login_url)
+
         data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
         logging.debug("Logging in...")
-        logging.debug(login_url)
         r = post(s, login_url, data)
 
         # Redirect post login

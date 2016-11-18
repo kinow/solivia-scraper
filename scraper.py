@@ -36,8 +36,8 @@ from dotenv import load_dotenv
 def get(session, url):
     """Utility method to HTTP GET a URL"""
     response = session.get(url, timeout=None)
-    if response.status_code != requests.codes.ok:
-        response.raise_for_status()
+    #if response.status_code != requests.codes.ok:
+    #    response.raise_for_status()
     return response
 
 def post(session, url, data):
@@ -52,6 +52,7 @@ def get_inverters_string(inverters_array):
     return inverters
 
 def get_wresult_string(text_with_ws_result):
+    logging.info("Searching for wresult in ", text_with_ws_result)
     token = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result).group(1)
     wresult = html.unescape(token)
     return wresult
@@ -98,7 +99,7 @@ def main():
 
     with requests.Session() as s:
         # Sign in
-        login_url = 'https://login.solar-inverter.com/en-US/Account/SignIn?returnUrl=%252fissue%252fwsfed%253fwa%253dwsignin1.0%2526wtrealm%253dhttp%25253a%25252f%25252fsoliviamonitoring.com%25252f%2526wctx%253drm%25253d0%252526id%25253dpassive%252526ru%25253d%2525252f%2526wct%253d' + now_ts_enc
+        login_url = 'https://monitoring.solar-inverter.com/'
         data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
         logging.debug("Logging in...")
         logging.debug(login_url)

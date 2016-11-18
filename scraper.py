@@ -15,8 +15,12 @@ from datetime import datetime, timedelta
 import urllib
 import re
 import html
-import json
 import time
+# JSON
+import json
+# CSV
+import csv
+# parsing HTML
 from html.parser import HTMLParser
 # parameters
 import argparse

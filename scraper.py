@@ -62,13 +62,17 @@ class MyHTMLParser(HTMLParser):
 def get(session, url):
     """Utility method to HTTP GET a URL"""
     response = session.get(url, timeout=None)
+    logging.debug("### GET to %s" % url)
     #if response.status_code != requests.codes.ok:
     #    response.raise_for_status()
+    logging.debug(response.text)
     return response
 
 def post(session, url, data):
     """Utility method to HTTP POST a URL with data parameters"""
     response = session.post(url, data=data, timeout=None)
+    logging.debug("### POST to %s" % url)
+    logging.debug(response.text)
     if response.status_code != requests.codes.ok:
         response.raise_for_status()
     return response

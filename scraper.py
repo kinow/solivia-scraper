@@ -107,14 +107,14 @@ def main():
     args            = parser.parse_args()
     date            = args.date.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    if args.from_ == None:
-    from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
-    to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
+    if args.date == None:
+        from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
+        to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        from_date       = date
+        to_date         = date
     types           = args.types
     interval        = args.interval
-
-    print(to_date)
-    return
 
     logging.info("Starting Solivia scraper")
     logging.info("Types selected: %s" % (', '.join(types)))

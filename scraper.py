@@ -33,7 +33,9 @@ parser.add_argument('--interval', help='Being nice to servers, and waiting for a
 # loggin imports
 import logging
 from pprint import pprint
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d]  %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s')
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 # dotEnv imports
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -82,8 +84,10 @@ def get_inverters_string(inverters_array):
     return inverters
 
 def get_wresult_string(text_with_ws_result):
-    logging.info("Searching for wresult in ", text_with_ws_result)
-    search_result = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result)
+    if text_with_ws_result == None or text_with_ws_result.strip() == '':
+        raise Exception("Missing the text with WSRESULT!")
+    logging.info("Searching for wresult...")
+    search_result = re.search('<input type="hidden" name="wresult" value="(.*)" /><input type="hidden" name="wctx"', text_with_ws_result)
     if search_result != None:
         token = search_result.group(1)
         wresult = html.unescape(token)

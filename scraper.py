@@ -105,14 +105,14 @@ def main():
     """Main method"""
 
     args            = parser.parse_args()
-    date            = args.date.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    if args.date == None:
-        from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
-        to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
-    else:
+    if args.date != None:
+        date            = args.date.replace(hour=0, minute=0, second=0, microsecond=0)
         from_date       = date
         to_date         = date
+    else:
+        from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
+        to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
+
     types           = args.types
     interval        = args.interval
 

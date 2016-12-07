@@ -25,9 +25,9 @@ from html.parser import HTMLParser
 # parameters
 import argparse
 parser = argparse.ArgumentParser(description='Solivia Monitoring scraper', epilog='the --date parameter is exclusive to --to and --from. If --date is used, then the others will be ignored')
-parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
-parser.add_argument('--from', dest="from_", help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
-parser.add_argument('--to', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=datetime.now())
+parser.add_argument('--date', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=None)
+parser.add_argument('--from', dest="from_", help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=None)
+parser.add_argument('--to', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=None)
 parser.add_argument('--types', help='Comma separated types e.g. Power,Energy,AcParam,DcParam', type=lambda s: s.lower().replace(' ', '').split(','), required=True)
 parser.add_argument('--interval', help='Being nice to servers, and waiting for an interval in milliseconds before firing more requests (defaults to 300)', type=int, default=300)
 # loggin imports
@@ -107,10 +107,14 @@ def main():
     args            = parser.parse_args()
     date            = args.date.replace(hour=0, minute=0, second=0, microsecond=0)
     
+    if args.from_ == None:
     from_date       = args.from_.replace(hour=0, minute=0, second=0, microsecond=0)
     to_date         = args.to.replace(hour=0, minute=0, second=0, microsecond=0)
     types           = args.types
     interval        = args.interval
+
+    print(to_date)
+    return
 
     logging.info("Starting Solivia scraper")
     logging.info("Types selected: %s" % (', '.join(types)))
@@ -152,14 +156,8 @@ def main():
         logging.debug("Logging in...")
         r = post(s, login_url, data)
 
-        # Redirect post login
-        # redirect_url = 'https://login.solar-inverter.com/issue/wsfed?wa=wsignin1.0&wtrealm=http%3a%2f%2fsoliviamonitoring.com%2f&wctx=rm%3d0%26id%3dpassive%26ru%3d%252f&wct=' + now_ts_enc
-        # logging.debug("Following log in redirect...")
-        # r = get(s, redirect_url)
-        text_with_ws_result = r.text
-
         # Azure AD auth
-        wresult = get_wresult_string(text_with_ws_result)
+        wresult = get_wresult_string(r.text)
         data = {'wa': 'wsignin1.0', 'wresult': wresult, 'wctx': 'rm=0&id=passive&ru=%2f'}
         logging.debug("Azure AD authentication...")
         r = post(s, 'https://monitoring.solar-inverter.com/', data)

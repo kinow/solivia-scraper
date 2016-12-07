@@ -146,16 +146,16 @@ def main():
         sign_in_url = 'https://monitoring.solar-inverter.com/'
         r = get(s, sign_in_url)
         login_url = get_form_action(r.text)
-        logging.debug('Login URL %s' % login_url)
+        logging.info('--> Log in URL found: %s' % login_url)
 
         data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
         logging.debug("Logging in...")
         r = post(s, login_url, data)
 
         # Redirect post login
-        redirect_url = 'https://login.solar-inverter.com/issue/wsfed?wa=wsignin1.0&wtrealm=http%3a%2f%2fsoliviamonitoring.com%2f&wctx=rm%3d0%26id%3dpassive%26ru%3d%252f&wct=' + now_ts_enc
-        logging.debug("Following log in redirect...")
-        r = get(s, redirect_url)
+        # redirect_url = 'https://login.solar-inverter.com/issue/wsfed?wa=wsignin1.0&wtrealm=http%3a%2f%2fsoliviamonitoring.com%2f&wctx=rm%3d0%26id%3dpassive%26ru%3d%252f&wct=' + now_ts_enc
+        # logging.debug("Following log in redirect...")
+        # r = get(s, redirect_url)
         text_with_ws_result = r.text
 
         # Azure AD auth

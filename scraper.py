@@ -33,7 +33,7 @@ parser.add_argument('--interval', help='Being nice to servers, and waiting for a
 # loggin imports
 import logging
 from pprint import pprint
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d]  %(message)s')
 # dotEnv imports
 from os.path import join, dirname
 from dotenv import load_dotenv
@@ -63,8 +63,8 @@ def get(session, url):
     """Utility method to HTTP GET a URL"""
     response = session.get(url, timeout=None)
     logging.debug("### GET to %s" % url)
-    #if response.status_code != requests.codes.ok:
-    #    response.raise_for_status()
+    if response.status_code != requests.codes.ok:
+        response.raise_for_status()
     logging.debug(response.text)
     return response
 

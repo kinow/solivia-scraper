@@ -79,16 +79,19 @@ def get_inverters_string(inverters_array):
 
 def get_wresult_string(text_with_ws_result):
     logging.info("Searching for wresult in ", text_with_ws_result)
-    token = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result).group(1)
-    wresult = html.unescape(token)
-    return wresult
+    search_result = re.search('%s(.*)%s' % ('<input type="hidden" name="wresult" value="', '" /><input type="hidden" name="wctx"'), text_with_ws_result)
+    if search_result != None:
+        token = search_result.group(1)
+        wresult = html.unescape(token)
+        return wresult
+    raise Exception("Could not find WRESULT string!")
 
 def get_form_action(response_txt):
     logging.info("Searching for form action in ", response_txt)
     parser = MyHTMLParser()
     parser.feed(response_txt)
     url = parser.get_url()
-    return "%s%s" % ('https://login.solar-inverter.com/', url)
+    return "%s%s" % ('https://login.solar-inverter.com', url)
 
 def main():
     """Main method"""
@@ -195,8 +198,16 @@ def main():
                 destination_file = join(dirname(__file__), from_date.strftime('%Y%m%d%H%M%S'))
 
                 # Write JSON
+                j = json.loads(r.text)
+                values = []
+                for temp_i in j:
+                    for temp_j in temp_i:
+                        obj = temp_j
+                        obj['date'] = date_formatted
+                        values.append(obj)
                 with open(destination_file + '-' + t + '.json', 'w') as out_file:
-                    out_file.write(r.text)
+                    #out_file.write(r.text)
+                    json.dumps(values, out_file)
 
                 # Get CSV data
                 get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)

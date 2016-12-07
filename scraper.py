@@ -95,7 +95,7 @@ def get_wresult_string(text_with_ws_result):
     raise Exception("Could not find WRESULT string!")
 
 def get_form_action(response_txt):
-    logging.info("Searching for form action in ", response_txt)
+    logging.info("Searching for form action...")
     parser = MyHTMLParser()
     parser.feed(response_txt)
     url = parser.get_url()
@@ -146,7 +146,7 @@ def main():
         sign_in_url = 'https://monitoring.solar-inverter.com/'
         r = get(s, sign_in_url)
         login_url = get_form_action(r.text)
-        logging.debug('Login URL ', login_url)
+        logging.debug('Login URL %s' % login_url)
 
         data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
         logging.debug("Logging in...")

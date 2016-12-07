@@ -201,7 +201,7 @@ def main():
                 data = json.loads(r.text)
                 logging.debug(data)
 
-                destination_file = join(dirname(__file__), from_date.strftime('%Y%m%d%H%M%S'))
+                destination_file = join(dirname(__file__), from_date.strftime('%Y%m%d'))
 
                 # Write JSON
                 j = json.loads(r.text)
@@ -212,8 +212,7 @@ def main():
                         obj['date'] = date_formatted
                         values.append(obj)
                 with open(destination_file + '-' + t + '.json', 'w') as out_file:
-                    #out_file.write(r.text)
-                    json.dumps(values, out_file)
+                    out_file.write(r.text)
 
                 # Get CSV data
                 get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)

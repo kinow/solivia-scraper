@@ -185,12 +185,20 @@ def main():
                 logging.debug("Fetching the data...")
                 r = post(s, fetch_inverter_data_url, data)
 
+                # Define inverters selected
+                update_selected_inverters_url = 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=' + inverters
+                logging.debug("Updating selected inverters...")
+                r = get(s, update_selected_inverters_url)
+
+                # Set X config (again, as the UI does that)
+                set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
+                logging.debug("Setting the context date...")
+                r = get(s, set_date_url)
+
                 # Set Y config
-                set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + SOLIVIA_PLANTGUID + '%3B&dataType=' + title_type + '&yMult=1'
+                set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
                 logging.debug("Setting other parameters, including inverters...")
                 r = get(s, set_parameters_url)
-
-                get(s, 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=20632dbb-2031-4c03-8203-1a6bea924dff%3B')
 
                 # Get data URL + the Solivia plant GUID
                 get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)

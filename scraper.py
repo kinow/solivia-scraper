@@ -219,7 +219,7 @@ def main():
                         obj = temp_j
                         obj['date'] = date_formatted
                         values.append(obj)
-                with open(destination_file + '-' + t + '.json', 'w') as out_file:
+                with open(destination_file + '-' + t + '.json', 'w', newline='\n') as out_file:
                     out_file.write(r.text)
 
                 # Get CSV data
@@ -227,7 +227,7 @@ def main():
                 r = get(s, get_csv_url)
 
                 # Write CSV
-                with open(destination_file + '-' + t + '.csv', 'w') as out_file:
+                with open(destination_file + '-' + t + '.csv', 'w', newline='\n') as out_file:
                     out_file.write(r.text)
 
                 logging.debug(r.text)

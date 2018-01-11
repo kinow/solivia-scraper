@@ -61,9 +61,16 @@ class MyHTMLParser(HTMLParser):
     def get_url(self):
         return self.url
 
+def get_headers():
+    # Specify Google Chrome user agent
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+    }
+    return headers
+
 def get(session, url):
     """Utility method to HTTP GET a URL"""
-    response = session.get(url, timeout=None)
+    response = session.get(url, timeout=None, headers=get_headers())
     logging.debug("### GET to %s" % url)
     if response.status_code != requests.codes.ok:
         response.raise_for_status()
@@ -72,7 +79,7 @@ def get(session, url):
 
 def post(session, url, data):
     """Utility method to HTTP POST a URL with data parameters"""
-    response = session.post(url, data=data, timeout=None)
+    response = session.post(url, data=data, timeout=None, headers=get_headers())
     logging.debug("### POST to %s" % url)
     logging.debug(response.text)
     if response.status_code != requests.codes.ok:

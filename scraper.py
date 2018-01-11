@@ -99,7 +99,7 @@ def get_form_action(response_txt):
     parser = MyHTMLParser()
     parser.feed(response_txt)
     url = parser.get_url()
-    return "%s%s" % ('https://login.solar-inverter.com', url)
+    return "%s" % (url)
 
 def main():
     """Main method"""

@@ -94,7 +94,7 @@ def get_wresult_string(text_with_ws_result):
     if text_with_ws_result == None or text_with_ws_result.strip() == '':
         raise Exception("Missing the text with WSRESULT!")
     logging.info("Searching for wresult...")
-    search_result = re.search('<input type="hidden" name="wresult" value="(.*)" /><input type="hidden" name="wctx"', text_with_ws_result)
+    search_result = re.search('<input type="hidden" name="wresult" value="(.*)" />\s*<input type="hidden" name="wctx"', text_with_ws_result)
     if search_result != None:
         token = search_result.group(1)
         wresult = html.unescape(token)

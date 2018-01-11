@@ -159,7 +159,7 @@ def main():
         login_url = get_form_action(r.text)
         logging.info('--> Log in URL found: %s' % login_url)
 
-        data = {'Email': SOLIVIA_USER, 'Password': SOLIVIA_PASS, 'RememberMe': 'false'}
+        data = {'username': SOLIVIA_USER, 'password': SOLIVIA_PASS}
         logging.debug("Logging in...")
         r = post(s, login_url, data)
 

@@ -30,6 +30,7 @@ parser.add_argument('--from', dest="from_", help='Date (YYYY-mm-dd)', type=lambd
 parser.add_argument('--to', help='Date (YYYY-mm-dd)', type=lambda s: datetime.strptime(s, '%Y-%m-%d'), default=None)
 parser.add_argument('--types', help='Comma separated types e.g. Power,Energy,AcParam,DcParam', type=lambda s: s.lower().replace(' ', '').split(','), required=True)
 parser.add_argument('--interval', help='Being nice to servers, and waiting for an interval in milliseconds before firing more requests (defaults to 300)', type=int, default=300)
+parser.add_argument('--noverify', help='If set, will disable to SSL verification', action="store_true", default=False)
 # loggin imports
 import logging
 from pprint import pprint
@@ -68,18 +69,18 @@ def get_headers():
     }
     return headers
 
-def get(session, url):
+def get(session, url, verify=True):
     """Utility method to HTTP GET a URL"""
-    response = session.get(url, timeout=None, headers=get_headers())
+    response = session.get(url, timeout=None, verify=verify, headers=get_headers())
     logging.debug("### GET to %s" % url)
     if response.status_code != requests.codes.ok:
         response.raise_for_status()
     logging.debug(response.text)
     return response
 
-def post(session, url, data):
+def post(session, url, data, verify=True):
     """Utility method to HTTP POST a URL with data parameters"""
-    response = session.post(url, data=data, timeout=None, headers=get_headers())
+    response = session.post(url, data=data, timeout=None, verify=verify, headers=get_headers())
     logging.debug("### POST to %s" % url)
     logging.debug(response.text)
     if response.status_code != requests.codes.ok:
@@ -122,6 +123,7 @@ def main():
 
     types           = args.types
     interval        = args.interval
+    verifyssl       = not args.noverify
 
     logging.info("Starting Solivia scraper")
     logging.info("Types selected: %s" % (', '.join(types)))
@@ -155,19 +157,19 @@ def main():
     with requests.Session() as s:
         # Sign in
         sign_in_url = 'https://monitoring.solar-inverter.com/'
-        r = get(s, sign_in_url)
+        r = get(s, sign_in_url, verify=verifyssl)
         login_url = get_form_action(r.text)
         logging.info('--> Log in URL found: %s' % login_url)
 
         data = {'username': SOLIVIA_USER, 'password': SOLIVIA_PASS}
         logging.debug("Logging in...")
-        r = post(s, login_url, data)
+        r = post(s, login_url, data, verify=verifyssl)
 
         # Azure AD auth
         wresult = get_wresult_string(r.text)
         data = {'wa': 'wsignin1.0', 'wresult': wresult, 'wctx': 'rm=0&id=passive&ru=%2f'}
         logging.debug("Azure AD authentication...")
-        r = post(s, 'https://monitoring.solar-inverter.com/', data)
+        r = post(s, 'https://monitoring.solar-inverter.com/', data, verify=verifyssl)
 
         # 1 day each time
         step = timedelta(days=1)
@@ -180,7 +182,7 @@ def main():
             # Set X config
             set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
             logging.debug("Setting the context date...")
-            r = get(s, set_date_url)
+            r = get(s, set_date_url, verify=verifyssl)
 
             for t in types:
                 logging.info("Downloading %s data..." % t)
@@ -190,27 +192,27 @@ def main():
                 fetch_inverter_data_url = 'https://monitoring.solar-inverter.com/Chart/FetchInverterData?duration=Daily&type=' + title_type
                 data = {'sort': '', 'group': '', 'filter': '', 'duration': 'Daily'}
                 logging.debug("Fetching the data...")
-                r = post(s, fetch_inverter_data_url, data)
+                r = post(s, fetch_inverter_data_url, data, verify=verifyssl)
 
                 # Define inverters selected
                 update_selected_inverters_url = 'https://monitoring.solar-inverter.com/Chart/UpdateInverterSelection?invList=' + inverters
                 logging.debug("Updating selected inverters...")
-                r = get(s, update_selected_inverters_url)
+                r = get(s, update_selected_inverters_url, verify=verifyssl)
 
                 # Set X config (again, as the UI does that)
                 set_date_url = "https://monitoring.solar-inverter.com/Chart/SetXConfig?date=%s" % date_encoded
                 logging.debug("Setting the context date...")
-                r = get(s, set_date_url)
+                r = get(s, set_date_url, verify=verifyssl)
 
                 # Set Y config
                 set_parameters_url = 'https://monitoring.solar-inverter.com/Chart/SetYConfig?invList=' + inverters + '%3B&dataType=' + title_type + '&yMult=1'
                 logging.debug("Setting other parameters, including inverters...")
-                r = get(s, set_parameters_url)
+                r = get(s, set_parameters_url, verify=verifyssl)
 
                 # Get data URL + the Solivia plant GUID
                 get_data_url = "https://monitoring.solar-inverter.com/Chart/FetchChartData?duration=Daily&datatype=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
                 logging.debug("Retrieving the Solar Inverters data...")
-                r = get(s, get_data_url)
+                r = get(s, get_data_url, verify=verifyssl)
 
                 # Will fail if invalid JSON
                 data = json.loads(r.text)
@@ -231,7 +233,7 @@ def main():
 
                 # Get CSV data
                 get_csv_url = "https://monitoring.solar-inverter.com/Chart/ExportChartData?duration=Daily&dataType=%s&plantGuid=%s" % (title_type, SOLIVIA_PLANTGUID)
-                r = get(s, get_csv_url)
+                r = get(s, get_csv_url, verify=verifyssl)
 
                 # Write CSV
                 with open(destination_file + '-' + t + '.csv', 'w', newline='\n') as out_file:
